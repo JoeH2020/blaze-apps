@@ -151,8 +151,21 @@ document.getElementById("paste").value="";document.getElementById("imp").textCon
 async function pdfIn(inp){const f=inp.files[0];inp.value="";if(!f)return;document.getElementById("imp").textContent="Reading PDF...";
 try{const pdfjs=await import("https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.min.mjs");pdfjs.GlobalWorkerOptions.workerSrc="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.worker.min.mjs";
 const doc=await pdfjs.getDocument({data:await f.arrayBuffer()}).promise;let lines=[];
-for(let i=1;i<=doc.numPages;i++){const pg=await doc.getPage(i);const tc=await pg.getTextContent();const rows={};tc.items.forEach(it=>{if(!it.str.trim())return;const y=Math.round(it.transform[5]/3);(rows[y]=rows[y]||[]).push(it)});
-Object.keys(rows).sort((a,b)=>b-a).forEach(y=>lines.push(rows[y].sort((a,b)=>a.transform[4]-b.transform[4]).map(it=>it.str).join("\t")))}
+const MEM=/^(HA\d+|\d{5,})$/i;let rowMode=false;
+for(let i=1;i<=doc.numPages;i++){const pg=await doc.getPage(i);const tc=await pg.getTextContent();
+const its=tc.items.filter(it=>it.str.trim()).map(it=>({s:it.str.trim(),x:it.transform[4],y:it.transform[5],h:Math.abs(it.transform[3])||it.height||0}));
+const mems=its.filter(it=>MEM.test(it.s)).sort((a,b)=>b.y-a.y);
+if(mems.length){rowMode=true;mems.forEach((m,k)=>{const up=k>0?(mems[k-1].y+m.y)/2:m.y+(k+1<mems.length?(m.y-mems[k+1].y)/2:20);const dn=k+1<mems.length?(m.y+mems[k+1].y)/2:m.y-(k>0?(mems[k-1].y-m.y)/2:20);
+const band=its.filter(it=>it!==m&&it.y<=up&&it.y>dn);
+const left=band.filter(it=>it.x<m.x-2&&!/^(name|#|membership|station|status|attended|member)$/i.test(it.s)&&!/^\d{1,3}\.?$/.test(it.s)&&/[A-Za-z]/.test(it.s));
+let name="";if(left.length){const big=Math.max(...left.map(it=>it.h));let nm=left.filter(it=>it.h>=big-0.5).sort((a,b)=>b.y-a.y||a.x-b.x);
+if(new Set(left.map(it=>Math.round(it.h))).size===1){const ty=nm[0].y;nm=nm.filter(it=>Math.abs(it.y-ty)<2)}
+name=nm.map(it=>it.s).join(" ").replace(/-\s+/g,"-")}
+const right=band.filter(it=>it.x>m.x).sort((a,b)=>a.x-b.x).map(it=>it.s).join(" ");
+if(name)lines.push(name+"\t"+m.s+"\t"+right)})}
+else{const rows={};tc.items.forEach(it=>{if(!it.str.trim())return;const y=Math.round(it.transform[5]/3);(rows[y]=rows[y]||[]).push(it)});
+Object.keys(rows).sort((a,b)=>b-a).forEach(y=>lines.push(rows[y].sort((a,b)=>a.transform[4]-b.transform[4]).map(it=>it.str).join("\t")))}}
+if(!lines.length){document.getElementById("imp").textContent="That PDF has no readable text (it may be an image). Copy and paste the register instead.";return}
 addPeople(lines.join("\n"))}catch(e){document.getElementById("imp").textContent="Could not read that PDF ("+e.message+"). Copy and paste the register instead."}}
 function removeP(i){const s=S();delete s.draw[s.people[i].name];s.people.splice(i,1);picking=null;save();render()}
 function clearPeople(){if(!confirm("Clear everyone from the "+CL[cur]+" class?"))return;const s=S();s.people=[];s.draw={};s.off=[];save();render()}
