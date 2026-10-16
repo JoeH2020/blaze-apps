@@ -138,12 +138,14 @@ function tapLane(id){const s=S();const w=who(id);if(picking!==null){if(!w&&!s.of
 function pick(i){picking=picking===i?null:i;render()}
 function setPre(i,v){const s=S();const p=s.people[i];if(v)s.people.forEach(q=>{if(q!==p&&q.pre==v)q.pre=""});p.pre=v;delete s.draw[p.name];Object.keys(s.draw).forEach(k=>{if(s.draw[k]==v)delete s.draw[k]});save();render()}
 function zoneFor(word){const zs=zones();const w=word.toLowerCase();let z=zs.find(x=>x.toLowerCase()==w);if(z)return z;const fam=/cardio|tread|run/.test(w)?/cardio|tread|run/:/strength|weight/.test(w)?/strength|weight/:/combat|box/;return zs.find(x=>fam.test(x.toLowerCase()))||null}
-function parseRegister(text){const out=[];const regMode=/(^|[\s\t])(HA\d+|\d{5,})\b/i.test(text);const skip=/^(name|membership|station|attended|type:|sport:|start date|coaches|display details|print page|first time|age)/i;
-text.split(/\r?\n/).forEach(raw=>{let l=raw.replace(/ /g," ").trim();if(!l||skip.test(l))return;
+function parseRegister(text){const out=[];const MEMRE=/(^|[\s\t])(HA\d+|\d{5,})\b/i;const regMode=MEMRE.test(text);const skip=/^#?\s*(name|membership|station|attended|type:|sport:|start date|coaches|display details|print page|first time|age)/i;
+const clean=l=>l.replace(/[\t✓✔☐]/g," ").replace(/\s-\s*$/,"").replace(/\s+/g," ").trim();let pend=[];
+text.split(/\r?\n/).forEach(raw=>{let l=raw.replace(/ /g," ").trim();if(!l)return;if(skip.test(l)){pend=[];return}
 let st=null;const m=l.match(/#\s*(\d{1,2})\s*(cardio|strength|combat|treadmill)/i);if(m){st={n:+m[1],zone:m[2]};l=l.slice(0,m.index)}
-l=l.replace(/^\d{1,3}[\s.\t]+/,"");const mem=l.search(/(^|[\s\t])(HA\d+|\d{5,})\b/i);if(mem>=0)l=l.slice(0,mem);else if(regMode)return;
-l=l.replace(/[\t✓✔]/g," ").replace(/\s-\s*$/,"").replace(/\s+/g," ").trim();
-if(!/[A-Za-z]{2}/.test(l)||l.length>60)return;out.push({name:l,st})});return out}
+const idx=/^\d{1,3}[\s.\t]+/.test(l);l=l.replace(/^\d{1,3}[\s.\t]+/,"");const mem=l.search(MEMRE);
+if(mem<0){if(regMode){const c=clean(l);if(/[A-Za-z]{2}/.test(c)&&c.length<=60)pend.push({c,idx})}else{const c=clean(l);if(/[A-Za-z]{2}/.test(c)&&c.length<=60)out.push({name:c,st})}return}
+let name=clean(l.slice(0,mem));if(!/[A-Za-z]{2}/.test(name)){const pick=pend.find(x=>x.idx)||pend[0];name=pick?pick.c:""}
+pend=[];if(!/[A-Za-z]{2}/.test(name)||name.length>60)return;out.push({name,st})});return out}
 function addPeople(txt){const s=S();const rows=parseRegister(txt!==undefined?txt:document.getElementById("paste").value);const have=new Set(s.people.map(p=>p.name.toLowerCase()));let added=0,withSt=0,clash=0;
 rows.forEach(r=>{if(have.has(r.name.toLowerCase()))return;const p={name:r.name,pre:""};s.people.push(p);have.add(r.name.toLowerCase());added++;
 if(r.st){const z=zoneFor(r.st.zone);const id=z?z+" "+r.st.n:null;if(id&&spots().some(x=>x.id==id)&&!s.off.includes(id)&&!s.people.some(q=>q!==p&&q.pre==id)){p.pre=id;withSt++}else clash++}});
