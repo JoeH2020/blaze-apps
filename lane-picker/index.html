@@ -105,6 +105,15 @@ footer{margin-top:26px;text-align:center;color:#666;font-size:12px;letter-spacin
 .toast{min-height:22px;margin-top:8px;font-family:Saira;font-weight:600;letter-spacing:1px;color:#7fd67f;font-size:16px}.toast.bad{color:#ffb020}
 .ovc.setup{text-align:left}
 html,body{overflow-x:hidden}.tabs{flex-wrap:wrap}header>.row{flex:1 1 auto!important;flex-wrap:wrap;justify-content:flex-end;max-width:100%}header>.row>*{flex:0 0 auto}
+.stepper{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px;font-family:Saira;font-weight:600;letter-spacing:1px;font-size:14px;color:#bbb}.stepper a{cursor:pointer;display:flex;align-items:center;gap:8px;background:#151515;border:1px solid #2a2a2a;border-radius:999px;padding:6px 14px 6px 6px}.stepper span{color:#555}
+.num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--fire);color:#fff;font-size:14px;margin-right:10px;vertical-align:1px}.stepper b{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--fire);color:#fff;font-size:13px}
+.steps{display:grid;grid-template-columns:1.15fr 1fr 1fr;gap:14px;margin-top:10px}.steps .panel h2{display:flex;align-items:center;font-size:17px}
+.how{font-size:15px;color:#d6d6d6;margin:4px 0 8px;line-height:1.4}.how b{color:#fff}
+h3.opt{font-family:Saira;font-weight:700;letter-spacing:1.5px;font-size:13px;color:#ff8a5c;margin:18px 0 6px;text-transform:uppercase}
+.full .steps,.full .stepper{display:none}
+@media (max-width:1000px){.steps{grid-template-columns:1fr}}
+.rgt tr.ns td{color:#999;text-decoration:line-through}.rgt tr.ns td.how2{text-decoration:none;color:#b33}
+.startcard{display:none;align-items:center;gap:6px;cursor:pointer;background:linear-gradient(135deg,rgba(232,56,13,.22),rgba(232,56,13,.06));border:1px solid rgba(232,56,13,.55);border-radius:14px;padding:14px 16px;margin:10px 0 14px}.startcard .t1{font-family:Saira;font-weight:700;letter-spacing:1.5px;font-size:17px}.startcard .t2{font-size:14px;color:#ddd;margin-top:3px}.full .startcard{display:none!important}
 #err{display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99;background:#5a1010;border:1px solid #c33;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px}
 </style></head><body><div class="wrap" id="app">
 <header>
@@ -112,28 +121,46 @@ html,body{overflow-x:hidden}.tabs{flex-wrap:wrap}header>.row{flex:1 1 auto!impor
 <div class="row" style="flex:0 0 auto;gap:10px"><div class="tabs" id="tabs"></div><button class="btn ghost" onclick="openRg()">Register</button><button class="btn ghost" id="fullbtn" onclick="toggleFull()">Board only</button><button class="btn ghost" onclick="openSetup()">Set-up</button></div>
 </header>
 <div class="bar"></div>
+<div class="stepper"><a onclick="go('s1')"><b>1</b>Add people</a><span>&rsaquo;</span><a onclick="go('s2')"><b>2</b>Give out lanes</a><span>&rsaquo;</span><a onclick="go('s3')"><b>3</b>No-shows &amp; register</a></div>
+<div id="startcard" class="startcard" onclick="go('s1')"><b class="num">1</b><div><div class="t1">START HERE: ADD THE PEOPLE FOR THIS CLASS</div><div class="t2">Tap here, then paste the register. Or skip it and tap a free lane to add people one by one.</div></div></div>
 <div class="stats" id="stats"></div>
 <div id="board"></div>
 <div class="legend"><span><i style="background:linear-gradient(135deg,#e0271f,#7d0f0a)"></i>Allocated (zone colour)</span><span><i style="background:#1b1b1b;border:2px solid var(--orange)"></i>Requested</span><span><i style="background:#1b1b1b;border:1px solid #444"></i>Free: tap to allocate someone</span><span><i style="background:repeating-linear-gradient(45deg,#333 0 3px,#151515 3px 6px)"></i>Out of use</span></div>
-<div class="panels">
-<div class="panel"><h2>WALK-UP</h2>
-<input class="wkname" id="wkname" placeholder="Type their name, or leave blank for a walk-in" autocomplete="off" autocapitalize="words" oninput="chips('wkchips','wkname')" onkeydown="if(event.key==='Enter'){this.blur();walkPick()}">
+
+<div class="steps">
+<div class="panel" id="s1"><h2><b class="num">1</b>ADD PEOPLE</h2>
+<p class="how">Open the class register, <b>select all</b>, <b>copy</b>, paste below, tap <b>Add</b>.</p>
+<textarea id="paste" placeholder="Paste the register here (or type names, one per line)"></textarea>
+<div class="row" style="margin-top:8px"><button class="btn" onclick="addPeople()">Add</button><label class="btn ghost" style="text-align:center">Upload PDF<input type="file" accept="application/pdf" style="display:none" onchange="pdfIn(this)"></label></div>
+<div class="muted" id="imp"></div>
+<p class="how" style="margin-top:12px">Someone asked for a lane? Pick it in the box next to their name.</p>
+<div class="people" id="people"></div>
+<button class="btn ghost" style="margin-top:10px" onclick="clearPeople()">Clear this class and start again</button></div>
+<div class="panel" id="s2"><h2><b class="num">2</b>GIVE OUT LANES</h2>
+<p class="how"><b>Pick one way.</b> Nobody is ever moved once they have a lane from B or C.</p>
+<h3 class="opt">A &middot; Everyone at once</h3>
+<button class="btn big" onclick="draw()">RANDOMISE EVERYONE</button>
+<div class="warn" id="msg"></div>
+<div class="row" style="margin-top:6px"><button class="btn ghost" onclick="undo()">Undo randomise</button></div>
+<h3 class="opt">B &middot; One at a time at the door</h3>
+<input class="wkname" id="wkname" placeholder="Type their name (blank = walk-in)" autocomplete="off" autocapitalize="words" oninput="chips('wkchips','wkname')" onkeydown="if(event.key==='Enter'){this.blur();walkPick()}">
 <div class="chips" id="wkchips"></div>
 <button class="btn big" onclick="walkPick()">RANDOM LANE</button>
 <div class="toast" id="wktoast"></div>
-<h2 style="margin-top:18px">DRAW EVERYONE</h2>
-<button class="btn big" onclick="draw()">RANDOMISE EVERYONE ELSE</button>
-<div class="warn" id="msg"></div>
-<div class="row" style="margin-top:6px"><button class="btn ghost" onclick="copyList()">Copy list</button><button class="btn ghost" onclick="undo()">Clear draw</button></div>
-<p class="muted">Walk-up and hand-placed lanes are never moved by the draw.</p></div>
-<div class="panel"><h2>PEOPLE</h2>
-<textarea id="paste" placeholder="Open the class register, select all, copy, and paste it here. A plain list of names works too."></textarea>
-<div class="row" style="margin-top:8px"><button class="btn" onclick="addPeople()">Add from register</button><label class="btn ghost" style="text-align:center">Upload register PDF<input type="file" accept="application/pdf" style="display:none" onchange="pdfIn(this)"></label><button class="btn ghost" onclick="clearPeople()">Clear class</button></div>
-<div class="muted" id="imp"></div>
-<p class="muted">Someone asked for a lane? Choose it next to their name, or tap their name and then tap the lane.</p>
-<div class="people" id="people"></div></div>
+<h3 class="opt">C &middot; Choose the lane yourself</h3>
+<p class="how">Tap any <b>free</b> lane on the board, type or tap the name, tap <b>Allocate</b>.</p></div>
+<div class="panel" id="s3"><h2><b class="num">3</b>NO-SHOWS &amp; REGISTER</h2>
+<h3 class="opt">Someone didn't turn up</h3>
+<p class="how">Tap their lane, tap <b>No-show</b>. To give the lane to someone waiting, type their name and tap <b>Allocate</b>.</p>
+<h3 class="opt">A lane is broken</h3>
+<p class="how">Tap it, tap <b>Out of use</b>.</p>
+<h3 class="opt">End of class</h3>
+<p class="how">Tap <b>Register</b> at the top to see everyone with their lane, and print or save it.</p>
+<div class="row" style="margin-top:8px"><button class="btn" onclick="openRg()">Open register</button><button class="btn ghost" onclick="copyList()">Copy lane list</button></div>
+<p class="muted" style="margin-top:14px">Each class (08:15, 09:40, 10:45) is separate: pick it at the top first.</p></div>
 </div>
 <div class="ov" id="ov"><div class="ovc"><div class="who" id="ovwho"></div><div id="ovst"></div><div class="row"><button class="btn ghost" onclick="walkPick(true)">Pick again</button><button class="btn" style="flex:1;font-size:20px;padding:16px" onclick="walkAllocate()">ALLOCATE</button></div><button class="btn ghost" style="margin-top:10px;width:100%" onclick="closeOv('ov')">Cancel</button></div></div>
+<div class="ov" id="done" onclick="closeOv('done')"><div class="ovc"><div class="who" id="donewho"></div><div id="donest"></div><button class="btn big" onclick="closeOv('done')">DONE</button></div></div>
 <div class="ov sheet" id="tile"><div class="ovc" id="tilec"></div></div>
 <div class="ov" id="setup"><div class="ovc setup"><h2 style="margin:0 0 6px;font-family:Saira;letter-spacing:2px;color:var(--fire)">STUDIO SET-UP</h2>
 <p class="muted">Applies to the class selected at the top.</p>
@@ -154,7 +181,7 @@ html,body{overflow-x:hidden}.tabs{flex-wrap:wrap}header>.row{flex:1 1 auto!impor
 <div id="err"></div>
 <script>
 window.onerror=function(m){const e=document.getElementById("err");if(e){e.style.display="block";e.textContent="Something went wrong: "+m+". Your lanes are saved. Refresh the page."}};
-const APPV="2026-10-17.3";
+const APPV="2026-10-17.5";
 const CL=["08:15","09:40","10:45"],KEY="blazeLiveLanes_v6",DEFZ="Combat, Strength, Cardio";let cur=0,picking=null,pending=null,tileId=null;
 function blank(){return{zones:DEFZ,lanes:8,off:[],people:[],draw:{}}}
 let db={};try{db=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){db={}}
@@ -178,39 +205,43 @@ const who=id=>{const s=S();const p=s.people.find(p=>p.pre===id);if(p)return{p,re
 const freeSpots=()=>{const s=S();return spots().filter(x=>!s.off.includes(x.id)&&!who(x.id))};
 const findP=n=>{n=clean(n).toLowerCase();return n?S().people.find(p=>p.name.toLowerCase()===n):null};
 const lab=x=>x.zone.toUpperCase()+" "+String(x.n).padStart(2,"0");
-function unplace(p){const s=S();if(p.pre)p.pre="";delete s.draw[p.name];p.src="";p.walk=false}
-function place(p,id,src){const s=S();const w=who(id);if(w&&w.p!==p)return false;unplace(p);if(src==="tap"){p.pre=id;p.src="tap"}else{s.draw[p.name]=id;p.walk=true;p.src="walk"}return true}
+function unplace(p){const s=S();if(p.pre)p.pre="";delete s.draw[p.name];p.src="";p.walk=false;p.took=""}
+function place(p,id,src){const s=S();const w=who(id);if(w&&w.p!==p)return false;unplace(p);p.noshow=false;if(src==="tap"){p.pre=id;p.src="tap"}else{s.draw[p.name]=id;p.walk=true;p.src="walk"}return true}
 function newWalkIn(){const s=S();let k=1;while(s.people.some(q=>q.name.toLowerCase()==="walk-in "+k))k++;return "Walk-in "+k}
 function render(){const s=S();
 document.getElementById("tabs").innerHTML=CL.map((c,i)=>`<button class="${i==cur?"on":""}" onclick="switchClass(${i})">${c}</button>`).join("");
-const all=spots(),live=all.filter(x=>!s.off.includes(x.id)),taken=all.filter(x=>who(x.id)).length,req=s.people.filter(p=>p.pre&&p.src!=="tap").length,waiting=s.people.filter(p=>!laneOf(p)).length;
-document.getElementById("stats").innerHTML=`<div class="stat hot"><b>${taken}/${live.length}</b><span>Lanes allocated</span></div><div class="stat"><b>${s.people.length}</b><span>In the class</span></div><div class="stat"><b>${req}</b><span>Requested</span></div><div class="stat"><b>${waiting}</b><span>Still to place</span></div><div class="stat"><b>${live.length-taken}</b><span>Free lanes</span></div>`;
+const all=spots(),live=all.filter(x=>!s.off.includes(x.id)),taken=all.filter(x=>who(x.id)).length,req=s.people.filter(p=>p.pre&&p.src!=="tap").length,waiting=s.people.filter(p=>!laneOf(p)&&!p.noshow).length,ns=s.people.filter(p=>p.noshow).length;
+document.getElementById("stats").innerHTML=`<div class="stat hot"><b>${taken}/${live.length}</b><span>Lanes allocated</span></div><div class="stat"><b>${s.people.length}</b><span>In the class</span></div><div class="stat"><b>${req}</b><span>Requested</span></div><div class="stat"><b>${waiting}</b><span>Still to place</span></div><div class="stat"><b>${live.length-taken}</b><span>Free lanes</span></div>${ns?`<div class="stat"><b>${ns}</b><span>No-shows</span></div>`:""}`;
 const zs=zones();const bd=document.getElementById("board");bd.className="sgrid";bd.style.setProperty("--zc",zs.length);
 let h='<div></div>'+zs.map((z,zi)=>{const ls=all.filter(x=>x.zone===z);const used=ls.filter(x=>who(x.id)).length;return `<div class="sh" style="color:${ZHEAD[zcol(z,zi)]}">${zoneIcon(z)}<span>${esc(z.toUpperCase())}</span><small>${used}/${ls.filter(x=>!s.off.includes(x.id)).length}</small></div>`}).join("");
 for(let n=1;n<=s.lanes;n++){h+=`<div class="rn">${String(n).padStart(2,"0")}</div>`;zs.forEach((z,zi)=>{const k=all.findIndex(x=>x.zone===z&&x.n===n);const x=all[k];const w=who(x.id),off=s.off.includes(x.id);const cls=off?"off":w?(w.req?"req":"taken"):"free";
 h+=`<div class="st c${x.c} ${cls}${picking!==null&&!w&&!off?" pick":""}" data-k="${k}" onclick="tapLane(${k})">${zoneIcon(z)}<div><div class="nm">${off?"Out of use":w?esc(w.p.name):""}</div>${w&&w.req?'<div class="tg">REQUESTED</div>':""}${!w&&!off?'<div class="nm" style="display:block">FREE</div>':""}</div></div>`})}
 bd.innerHTML=h;
-document.getElementById("people").innerHTML=s.people.map((p,i)=>{const l=laneOf(p);return `<div class="p${picking===i?" sel":""}"><div class="nm"><button onclick="pick(${i})">${esc(p.name)}</button><div class="muted" style="margin:0">${p.pre&&p.src!=="tap"?"Requested: "+esc(p.pre):l?esc(l)+(p.src==="walk"?" (walk-up)":p.src==="tap"?" (placed)":""):"Not placed"}</div></div><select onchange="setPre(${i},this.value)"><option value="">${p.pre?"No request (random)":l?esc(l)+" (current)":"Random"}</option>${live.map(o=>{const w=who(o.id);const t=w&&w.p!==p;return `<option value="${esc(o.id)}" ${p.pre===o.id?"selected":""} ${t?"disabled":""}>${esc(o.id)}${t?" (taken)":""}</option>`}).join("")}</select><button class="x" onclick="removeP(${i})">&times;</button></div>`}).join("")||'<p class="muted">No names yet. Paste the register, or tap a free lane to add someone.</p>';
-chips("wkchips","wkname");if(document.getElementById("rg").classList.contains("show"))drawRg()}
-function switchClass(i){cur=i;picking=null;pending=null;["ov","tile"].forEach(closeOv);document.getElementById("wktoast").textContent="";document.getElementById("msg").textContent="";render()}
-function chips(box,inp){const s=S();const q=clean(document.getElementById(inp).value).toLowerCase();const un=s.people.map((p,i)=>({p,i})).filter(o=>!laneOf(o.p)&&(!q||o.p.name.toLowerCase().includes(q))).slice(0,14);
+document.getElementById("people").innerHTML=s.people.map((p,i)=>{const l=laneOf(p);return `<div class="p${picking===i?" sel":""}"><div class="nm"><button onclick="pick(${i})">${esc(p.name)}</button><div class="muted" style="margin:0">${p.noshow?"No-show":p.pre&&p.src!=="tap"?"Requested: "+esc(p.pre):l?esc(l)+(p.src==="walk"?" (walk-up)":p.src==="tap"?" (placed)":""):"Not placed"}</div></div><select onchange="setPre(${i},this.value)"><option value="">${p.pre?"No request (random)":l?esc(l)+" (current)":"Random"}</option>${live.map(o=>{const w=who(o.id);const t=w&&w.p!==p;return `<option value="${esc(o.id)}" ${p.pre===o.id?"selected":""} ${t?"disabled":""}>${esc(o.id)}${t?" (taken)":""}</option>`}).join("")}</select><button class="x" onclick="removeP(${i})">&times;</button></div>`}).join("")||'<p class="muted">No names yet. Paste the register, or tap a free lane to add someone.</p>';
+document.getElementById("startcard").style.display=s.people.length?"none":"flex";chips("wkchips","wkname");if(document.getElementById("rg").classList.contains("show"))drawRg()}
+function switchClass(i){cur=i;picking=null;pending=null;["ov","tile","done"].forEach(closeOv);document.getElementById("wktoast").textContent="";document.getElementById("msg").textContent="";render()}
+function chips(box,inp){const s=S();const q=clean(document.getElementById(inp).value).toLowerCase();const un=s.people.map((p,i)=>({p,i})).filter(o=>!laneOf(o.p)&&!o.p.noshow&&(!q||o.p.name.toLowerCase().includes(q))).slice(0,14);
 document.getElementById(box).innerHTML=un.map(o=>`<button class="chip" onclick="document.getElementById('${inp}').value=S().people[${o.i}].name;chips('${box}','${inp}')">${esc(o.p.name)}</button>`).join("")}
 function pick(i){picking=picking===i?null:i;render()}
 function setPre(i,v){const s=S();const p=s.people[i];if(!p)return;if(!v){if(p.pre){p.pre="";p.src=""}save();render();return}
 if(!spotById(v)||s.off.includes(v)){render();return}const w=who(v);if(w&&w.p!==p){if(w.req||w.p.src){alert(v+" is already taken by "+w.p.name+".");render();return}unplace(w.p)}
-unplace(p);p.pre=v;p.src="";save();render()}
-function tapLane(k){const s=S();const x=spots()[k];if(!x)return;const w=who(x.id),off=s.off.includes(x.id);
+unplace(p);p.pre=v;p.src="";p.noshow=false;save();render()}
+let swapFrom="";
+function tapLane(k,keepSwap){if(!keepSwap)swapFrom="";const s=S();const x=spots()[k];if(!x)return;const w=who(x.id),off=s.off.includes(x.id);
 if(picking!==null){const p=s.people[picking];if(p&&!w&&!off){setPre(picking,x.id)}picking=null;render();return}
 tileId=x.id;const c=document.getElementById("tilec");const tag=`<span class="tagz st c${x.c}" style="height:auto;display:inline-block;border:0">${esc(lab(x))}</span>`;
 if(off){c.innerHTML=`${tag}<h3 style="margin-top:12px">Out of use</h3><div class="col"><button class="btn" onclick="tileOn()">Turn this lane back on</button><button class="btn ghost" onclick="closeOv('tile')">Cancel</button></div>`}
-else if(w){c.innerHTML=`${tag}<h3 style="margin-top:12px">${esc(w.p.name)}</h3><div class="muted">${w.req?"Requested this lane":w.p.src==="walk"?"Walk-up":w.p.src==="tap"?"Placed by hand":"From the draw"}</div><div class="col"><button class="btn ghost" onclick="tileFree()">Free this lane (keep them in the class)</button><button class="btn ghost" onclick="tileRemove()">Remove them from the class</button><button class="btn" onclick="closeOv('tile')">Done</button></div>`}
-else{c.innerHTML=`${tag}<h3 style="margin-top:12px">Who is going here?</h3><input id="tname" placeholder="Type a name, or leave blank for a walk-in" autocomplete="off" autocapitalize="words" oninput="chips('tchips','tname')" onkeydown="if(event.key==='Enter'){this.blur();tileAlloc()}"><div class="chips" id="tchips"></div><div class="warn" id="tmsg"></div><div class="col"><button class="btn" style="font-size:18px;padding:15px" onclick="tileAlloc()">ALLOCATE</button><button class="btn ghost" onclick="tileOff()">Mark out of use</button><button class="btn ghost" onclick="closeOv('tile')">Cancel</button></div>`;chips("tchips","tname")}
+else if(w){c.innerHTML=`${tag}<h3 style="margin-top:12px">${esc(w.p.name)}</h3><div class="muted">${w.req?"Requested this lane":w.p.src==="walk"?"Walk-up":w.p.src==="tap"?"Placed by hand":"From the draw"}</div><div class="col"><button class="btn" style="font-size:17px;padding:15px" onclick="tileNoShow(true)">NO-SHOW &middot; give lane to someone else</button><button class="btn ghost" onclick="tileNoShow(false)">No-show &middot; leave lane empty</button><button class="btn ghost" onclick="tileFree()">Take them off this lane (still coming)</button><button class="btn ghost" onclick="tileRemove()">Delete them (added by mistake)</button><button class="btn ghost" onclick="closeOv('tile')">Cancel</button></div>`}
+else{c.innerHTML=`${tag}<h3 style="margin-top:12px">Who is going here?</h3>${swapFrom?`<div class="muted">Replacing no-show: ${esc(swapFrom)}</div>`:""}<input id="tname" placeholder="Type a name, or leave blank for a walk-in" autocomplete="off" autocapitalize="words" oninput="chips('tchips','tname')" onkeydown="if(event.key==='Enter'){this.blur();tileAlloc()}"><div class="chips" id="tchips"></div><div class="warn" id="tmsg"></div><div class="col"><button class="btn" style="font-size:18px;padding:15px" onclick="tileAlloc()">ALLOCATE</button><button class="btn ghost" onclick="tileOff()">Out of use (broken)</button><button class="btn ghost" onclick="closeOv('tile')">Cancel</button></div>`;chips("tchips","tname")}
 document.getElementById("tile").classList.add("show")}
 function tileAlloc(){const s=S();const id=tileId;if(!id||!spotById(id)||s.off.includes(id)||who(id)){closeOv("tile");render();return}
 let name=clean(document.getElementById("tname").value);let p=findP(name);const msg=document.getElementById("tmsg");
 if(p&&laneOf(p)&&laneOf(p)!==id){if(msg.dataset.ok!==p.name){msg.dataset.ok=p.name;msg.textContent=`${p.name} is on ${laneOf(p)}. Tap ALLOCATE again to move them here.`;return}}
 if(!p){p={name:name||newWalkIn(),pre:"",walk:false,src:""};s.people.push(p)}
-place(p,id,"tap");save();closeOv("tile");render();flash(id)}
+place(p,id,"tap");if(swapFrom)p.took=swapFrom;swapFrom="";save();closeOv("tile");render();flash(id);showDone(p.name,spotById(id))}
+function showDone(name,x){if(!x)return;document.getElementById("donewho").textContent=name.toUpperCase()+" GOES TO";document.getElementById("donest").innerHTML=`<div class="bigst st c${x.c}" style="height:auto;display:block;border:0">${zoneIcon(x.zone)}<div class="z">${esc(x.zone.toUpperCase())}</div><div class="num">${String(x.n).padStart(2,"0")}</div></div>`;document.getElementById("done").classList.add("show")}
+function tileNoShow(give){const w=who(tileId);if(!w){closeOv("tile");render();return}const id=tileId;unplace(w.p);w.p.noshow=true;save();render();
+if(give){swapFrom=w.p.name;const k=spots().findIndex(x=>x.id===id);tapLane(k,true);const t=document.getElementById("tname");if(t)t.focus()}else closeOv("tile")}
 function tileFree(){const w=who(tileId);if(w)unplace(w.p);save();closeOv("tile");render()}
 function tileRemove(){const s=S();const w=who(tileId);if(w&&confirm("Remove "+w.p.name+" from the "+CL[cur]+" class?")){unplace(w.p);s.people=s.people.filter(q=>q!==w.p);picking=null}save();closeOv("tile");render()}
 function tileOff(){const s=S();if(tileId&&!who(tileId)&&!s.off.includes(tileId))s.off.push(tileId);save();closeOv("tile");render()}
@@ -260,7 +291,7 @@ function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random
 function pinned(){const s=S();const keep={};s.people.forEach(p=>{if(!p.pre&&p.src==="walk"&&s.draw[p.name])keep[p.name]=s.draw[p.name]});return keep}
 function draw(){const s=S();const keep=pinned();s.draw=keep;const used=new Set([...s.off,...s.people.filter(p=>p.pre).map(p=>p.pre),...Object.values(keep)]);const byZ={};spots().filter(x=>!used.has(x.id)).forEach(x=>(byZ[x.zone]=byZ[x.zone]||[]).push(x.id));
 Object.values(byZ).forEach(shuffle);const zk=Object.keys(byZ).sort((a,b)=>byZ[b].length-byZ[a].length);const order=[];let more=true;while(more){more=false;zk.forEach(z=>{if(byZ[z].length){order.push(byZ[z].shift());more=true}})}
-const todo=shuffle(s.people.filter(p=>!p.pre&&!keep[p.name]));todo.forEach(p=>{p.src="";p.walk=false});todo.forEach((p,i)=>{if(order[i])s.draw[p.name]=order[i]});
+const todo=shuffle(s.people.filter(p=>!p.pre&&!keep[p.name]&&!p.noshow));todo.forEach(p=>{p.src="";p.walk=false});todo.forEach((p,i)=>{if(order[i])s.draw[p.name]=order[i]});
 document.getElementById("msg").textContent=todo.length>order.length?`${todo.length-order.length} people have no lane. Add lanes in Set-up or turn some back on.`:"";save();render()}
 function undo(){const s=S();s.draw=pinned();document.getElementById("msg").textContent="";save();render()}
 function copyList(){const t="BLAZE Live "+CL[cur]+"\n"+spots().map(x=>{const w=who(x.id);return w?x.id+": "+w.p.name+(w.req?" (requested)":""):null}).filter(Boolean).join("\n");copyText(t)}
@@ -283,18 +314,19 @@ if(!freeSpots().some(x=>x.id===pending.id)){closeOv("ov");t.className="toast bad
 const typed=clean(document.getElementById("wkname").value);let p=findP(typed);if(p&&laneOf(p)){closeOv("ov");t.className="toast bad";t.textContent=`${p.name} is already on ${laneOf(p)}.`;pending=null;return}
 if(!p){p={name:typed||newWalkIn(),pre:"",walk:false,src:""};s.people.push(p)}
 place(p,pending.id,"walk");const id=pending.id;pending=null;save();closeOv("ov");document.getElementById("wkname").value="";t.className="toast";t.textContent=`${p.name} → ${id}`;render();flash(id)}
+function go(id){const e=document.getElementById(id);if(e)e.scrollIntoView({behavior:"smooth",block:"start"})}
 function closeOv(id){document.getElementById(id).classList.remove("show")}
 function toggleFull(){document.getElementById("app").classList.toggle("full");document.getElementById("fullbtn").textContent=document.getElementById("app").classList.contains("full")?"Show controls":"Board only"}
 let rgByLane=false;
 function openRg(){drawRg();document.getElementById("rg").classList.add("show")}
 function closeRg(){document.getElementById("rg").classList.remove("show")}
 function rgToggle(){rgByLane=!rgByLane;document.getElementById("rgsort").textContent=rgByLane?"Sort by name":"Sort by lane";drawRg()}
-function howOf(p){return p.pre&&p.src!=="tap"?"Requested":p.src==="tap"?"Placed by hand":p.src==="walk"?"Walk-up":laneOf(p)?"Random":"Not placed"}
+function howOf(p){if(p.noshow)return "No-show";const t=p.took?", replaced no-show "+p.took:"";return (p.pre&&p.src!=="tap"?"Requested":p.src==="tap"?"Placed by hand":p.src==="walk"?"Walk-up":laneOf(p)?"Random":"Not placed")+(laneOf(p)?t:"")}
 function rgRows(){const s=S();const sp=spots();const ord=id=>{const x=sp.find(y=>y.id===id);return x?x.n*100+x.zi:1e6};
 const rows=s.people.map(p=>({p,id:laneOf(p),how:howOf(p)}));rows.sort(rgByLane?(a,b)=>ord(a.id)-ord(b.id)||a.p.name.localeCompare(b.p.name):(a,b)=>a.p.name.localeCompare(b.p.name));return rows}
 function drawRg(){const rows=rgRows();document.getElementById("rgcl").textContent=CL[cur];const placed=rows.filter(r=>r.id).length;
-document.getElementById("rgsum").textContent=`${rows.length} ${rows.length==1?"person":"people"}, ${placed} with a lane${rows.length-placed?`, ${rows.length-placed} not placed`:""}. David Lloyd Hatfield, Sat 17 October 2026`;
-document.getElementById("rgbody").innerHTML=rows.map((r,i)=>{const x=r.id&&spotById(r.id);return `<tr class="${r.id?"":"np"}"><td>${i+1}</td><td>${esc(r.p.name)}</td><td class="stn">${x?`<span class="dot" style="background:${ZHEX[x.c]}"></span>${esc(lab(x))}`:"&ndash;"}</td><td>${r.how}</td><td class="box"><span></span></td></tr>`}).join("")||'<tr><td colspan="5">Nobody in this class yet.</td></tr>'}
+const nsn=rows.filter(r=>r.p.noshow).length;document.getElementById("rgsum").textContent=`${rows.length} ${rows.length==1?"person":"people"}, ${placed} with a lane${nsn?`, ${nsn} no-show`:""}${rows.length-placed-nsn?`, ${rows.length-placed-nsn} not placed`:""}. David Lloyd Hatfield, Sat 17 October 2026`;
+document.getElementById("rgbody").innerHTML=rows.map((r,i)=>{const x=r.id&&spotById(r.id);return `<tr class="${r.p.noshow?"ns":r.id?"":"np"}"><td>${i+1}</td><td>${esc(r.p.name)}</td><td class="stn">${x?`<span class="dot" style="background:${ZHEX[x.c]}"></span>${esc(lab(x))}`:"&ndash;"}</td><td class="how2">${esc(r.how)}</td><td class="box"><span></span></td></tr>`}).join("")||'<tr><td colspan="5">Nobody in this class yet.</td></tr>'}
 function rgCopy(){copyText(`BLAZE Live ${CL[cur]} register\n`+rgRows().map((r,i)=>`${i+1}. ${r.p.name}\t${r.id||"Not placed"}\t${r.how}`).join("\n"))}
 
 let newV=null;function checkUpdate(){if(!/^https?:/.test(location.protocol))return;fetch(location.pathname+"?check="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"").then(t=>{const m=t.match(/const APPV="([^"]+)"/);if(m&&m[1]!==APPV){newV=m[1];document.getElementById("upd").style.display="block"}}).catch(()=>{})}
