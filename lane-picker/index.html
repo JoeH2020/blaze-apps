@@ -104,7 +104,7 @@ footer{margin-top:26px;text-align:center;color:#666;font-size:12px;letter-spacin
 .wkname{font-size:20px!important;padding:14px!important}
 .toast{min-height:22px;margin-top:8px;font-family:Saira;font-weight:600;letter-spacing:1px;color:#7fd67f;font-size:16px}.toast.bad{color:#ffb020}
 .ovc.setup{text-align:left}
-header>.row{flex:1 1 auto!important;justify-content:flex-end;max-width:100%}header>.row>*{flex:0 0 auto}
+html,body{overflow-x:hidden}.tabs{flex-wrap:wrap}header>.row{flex:1 1 auto!important;flex-wrap:wrap;justify-content:flex-end;max-width:100%}header>.row>*{flex:0 0 auto}
 #err{display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99;background:#5a1010;border:1px solid #c33;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px}
 </style></head><body><div class="wrap" id="app">
 <header>
@@ -148,11 +148,13 @@ header>.row{flex:1 1 auto!important;justify-content:flex-end;max-width:100%}head
 <div class="row noprint" style="flex:0 0 auto"><button class="btn ghost" id="rgsort" onclick="rgToggle()">Sort by lane</button><button class="btn ghost" onclick="rgCopy()">Copy</button><button class="btn" onclick="window.print()">Print / Save PDF</button><button class="btn ghost" onclick="closeRg()">Close</button></div></div>
 <table class="rgt"><thead><tr><th>#</th><th>NAME</th><th>STATION</th><th>HOW</th><th>HERE</th></tr></thead><tbody id="rgbody"></tbody></table>
 </div></div>
-<footer>Built by <b>Joe Haigh</b> for BLAZE Live &bull; David Lloyd Hatfield</footer>
+<footer>Built by <b>Joe Haigh</b> for BLAZE Live &bull; David Lloyd Hatfield &bull; version <span id="ver"></span></footer>
+<div id="upd" style="display:none;position:fixed;left:10px;right:10px;top:10px;z-index:98;background:#1d3d1d;border:1px solid #3f9e45;color:#fff;padding:12px 14px;border-radius:12px;font-size:15px;text-align:center" onclick="goUpdate()">A newer version is ready. <b style="text-decoration:underline">Tap here to load it.</b> Your lanes are kept.</div>
 </div>
 <div id="err"></div>
 <script>
 window.onerror=function(m){const e=document.getElementById("err");if(e){e.style.display="block";e.textContent="Something went wrong: "+m+". Your lanes are saved. Refresh the page."}};
+const APPV="2026-10-17.3";
 const CL=["08:15","09:40","10:45"],KEY="blazeLiveLanes_v6",DEFZ="Combat, Strength, Cardio";let cur=0,picking=null,pending=null,tileId=null;
 function blank(){return{zones:DEFZ,lanes:8,off:[],people:[],draw:{}}}
 let db={};try{db=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){db={}}
@@ -294,5 +296,9 @@ function drawRg(){const rows=rgRows();document.getElementById("rgcl").textConten
 document.getElementById("rgsum").textContent=`${rows.length} ${rows.length==1?"person":"people"}, ${placed} with a lane${rows.length-placed?`, ${rows.length-placed} not placed`:""}. David Lloyd Hatfield, Sat 17 October 2026`;
 document.getElementById("rgbody").innerHTML=rows.map((r,i)=>{const x=r.id&&spotById(r.id);return `<tr class="${r.id?"":"np"}"><td>${i+1}</td><td>${esc(r.p.name)}</td><td class="stn">${x?`<span class="dot" style="background:${ZHEX[x.c]}"></span>${esc(lab(x))}`:"&ndash;"}</td><td>${r.how}</td><td class="box"><span></span></td></tr>`}).join("")||'<tr><td colspan="5">Nobody in this class yet.</td></tr>'}
 function rgCopy(){copyText(`BLAZE Live ${CL[cur]} register\n`+rgRows().map((r,i)=>`${i+1}. ${r.p.name}\t${r.id||"Not placed"}\t${r.how}`).join("\n"))}
+
+let newV=null;function checkUpdate(){if(!/^https?:/.test(location.protocol))return;fetch(location.pathname+"?check="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"").then(t=>{const m=t.match(/const APPV="([^"]+)"/);if(m&&m[1]!==APPV){newV=m[1];document.getElementById("upd").style.display="block"}}).catch(()=>{})}
+function goUpdate(){save();location.replace(location.pathname+"?v="+encodeURIComponent(newV||Date.now()))}
+document.getElementById("ver").textContent=APPV;checkUpdate();setInterval(checkUpdate,120000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkUpdate()});
 render();
 </script></body></html>
